@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RequestBreak extends Model
 {
+    protected $table = 'request_breaks';
+
     protected $fillable = [
         'attendance_request_id',
         'break_no',
@@ -14,8 +16,8 @@ class RequestBreak extends Model
         'break_end_at',
     ];
 
-    public function attendanceRequest(): BelongsTo
+    public function attendanceRequest()
     {
-        return $this->belongsTo(AttendanceRequest::class);
+        return $this->belongsTo(AttendanceRequest::class, 'attendance_request_id');
     }
 }

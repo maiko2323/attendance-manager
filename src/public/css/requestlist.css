@@ -1,0 +1,73 @@
+.requestlist {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.requestlist__title {
+    font-size: 30px;
+    font-weight: 700;
+    margin: 32px 0 24px;
+}
+
+.heading-bar {
+    width: 6px;
+    height: 26px;
+    object-fit: cover;
+}
+
+.requestlist__tab {
+    display: inline-block;
+    padding: 8px 0;
+    margin-left: 60px;
+    color: #000000;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 16px;
+}
+
+.requestlist__tabs {
+    display: flex;
+    justify-content: left;
+    gap: 80px;
+    width: 900px;
+    margin: 32px auto 48px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #000000;
+}
+
+.requestlist__tab.is-active {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.requestlist__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 16px;
+    color: #737373;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+
+}
+
+.requestlist__table th,
+.requestlist__table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #E1E1E1;
+    font-size: 16px;
+}
+
+.requestlist__table thead th {
+    background: #ffffff;
+    font-weight: 700;
+    color: #737373;
+}
+
+.requestlist__detail {
+    color: #000000;
+    text-decoration: none;
+    font-weight: 700;
+}

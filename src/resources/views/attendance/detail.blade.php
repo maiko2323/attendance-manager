@@ -1,0 +1,134 @@
+@extends('layouts.app')
+
+@section('title', '勤怠詳細画面')
+
+@section('header_type', 'default')
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/detail.css') }}">
+@endpush
+
+@section('content')
+<div class="attdetail">
+
+<div class="attdetail__wrap">
+  <h1 class="attdetail__title">
+    <img src="{{ asset('images/heading_bar.png') }}" alt="" class="heading-bar">
+    勤怠詳細
+  </h1>
+
+  <form method="POST" action="{{ route('attendance.request', ['date' => $workDate]) }}">
+    @csrf
+
+    @php
+      $in  = $isPending ? $pendingRequest?->request_clock_in_at  : $attendance?->clock_in_at;
+      $out = $isPending ? $pendingRequest?->request_clock_out_at : $attendance?->clock_out_at;
+
+      $break1 = $attendance?->breaks?->firstWhere('break_no', 1);
+      $break2 = $attendance?->breaks?->firstWhere('break_no', 2);
+
+      $reqBreak1 = $pendingRequest?->requestBreaks?->firstWhere('break_no', 1);
+      $reqBreak2 = $pendingRequest?->requestBreaks?->firstWhere('break_no', 2);
+
+      $b1s = $isPending ? $reqBreak1?->break_start_at : $break1?->break_start_at;
+      $b1e = $isPending ? $reqBreak1?->break_end_at   : $break1?->break_end_at;
+      $b2s = $isPending ? $reqBreak2?->break_start_at : $break2?->break_start_at;
+      $b2e = $isPending ? $reqBreak2?->break_end_at   : $break2?->break_end_at;
+
+      $reason = $isPending ? $pendingRequest?->reason : '';
+    @endphp
+
+    <div class="attdetail__card">
+      <table class="attdetail__table">
+        <tr>
+          <th>名前</th>
+          <td class="attdetail__value">{{ Auth::user()->name }}</td>
+        </tr>
+
+        <tr>
+          <th>日付</th>
+          <td colspan="2" class="attdetail__value">
+            <span class="attdetail__date-item">{{ \Carbon\Carbon::parse($workDate)->isoFormat('YYYY年') }}</span>
+            <span class="attdetail__date-item">{{ \Carbon\Carbon::parse($workDate)->isoFormat('M月D日') }}</span>
+          </td>
+        </tr>
+
+        <tr>
+          <th>出勤・退勤</th>
+          <td class="attdetail__time">
+            @if($isPending)
+              <span class="attdetail__time-value">{{ $in ? \Carbon\Carbon::parse($in)->format('H:i') : '' }}</span>
+              <span class="attdetail__tilde">〜</span>
+              <span class="attdetail__time-value">{{ $out ? \Carbon\Carbon::parse($out)->format('H:i') : '' }}</span>
+            @else
+              <input type="time" name="clock_in_at" class="attdetail__time-input"
+                value="{{ old('clock_in_at', $in ? \Carbon\Carbon::parse($in)->format('H:i') : '') }}">
+              <span class="attdetail__tilde">〜</span>
+              <input type="time" name="clock_out_at" class="attdetail__time-input"
+                value="{{ old('clock_out_at', $out ? \Carbon\Carbon::parse($out)->format('H:i') : '') }}">
+            @endif
+          </td>
+        </tr>
+
+        <tr>
+          <th>休憩</th>
+          <td class="attdetail__time">
+            @if($isPending)
+              <span class="attdetail__time-value">{{ $b1s ? \Carbon\Carbon::parse($b1s)->format('H:i') : '' }}</span>
+              <span class="attdetail__tilde">〜</span>
+              <span class="attdetail__time-value">{{ $b1e ? \Carbon\Carbon::parse($b1e)->format('H:i') : '' }}</span>
+            @else
+              <input type="time" name="breaks[1][start]" class="attdetail__time-input"
+                value="{{ old('breaks.1.start', $b1s ? \Carbon\Carbon::parse($b1s)->format('H:i') : '') }}">
+              <span class="attdetail__tilde">〜</span>
+              <input type="time" name="breaks[1][end]" class="attdetail__time-input"
+                value="{{ old('breaks.1.end', $b1e ? \Carbon\Carbon::parse($b1e)->format('H:i') : '') }}">
+            @endif
+          </td>
+        </tr>
+
+        <tr>
+          <th>休憩2</th>
+          <td class="attdetail__time">
+            @if($isPending)
+              <span class="attdetail__time-value">{{ $b2s ? \Carbon\Carbon::parse($b2s)->format('H:i') : '' }}</span>
+              <span class="attdetail__tilde">〜</span>
+              <span class="attdetail__time-value">{{ $b2e ? \Carbon\Carbon::parse($b2e)->format('H:i') : '' }}</span>
+            @else
+              <input type="time" name="breaks[2][start]" class="attdetail__time-input"
+                value="{{ old('breaks.2.start', $b2s ? \Carbon\Carbon::parse($b2s)->format('H:i') : '') }}">
+              <span class="attdetail__tilde">〜</span>
+              <input type="time" name="breaks[2][end]" class="attdetail__time-input"
+                value="{{ old('breaks.2.end', $b2e ? \Carbon\Carbon::parse($b2e)->format('H:i') : '') }}">
+            @endif
+          </td>
+        </tr>
+
+        <tr>
+          <th>備考</th>
+          <td class="attdetail__memo">
+            @if($isPending)
+              <span class="attdetail__memo-text">{{ $reason }}</span>
+            @else
+              <input type="text" name="reason" class="attdetail__memo-input"
+                value="{{ old('reason', $reason) }}">
+            @endif
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    @if(!$isPending)
+      <div class="attdetail__actions">
+        <button type="submit" class="attdetail__btn">修正</button>
+      </div>
+    @endif
+  </form>
+
+  @if($isPending)
+    <p class="attdetail__notice">*承認待ちのため修正はできません。</p>
+  @endif
+
+</div>
+</div>
+@endsection

@@ -31,22 +31,33 @@
 
     {{-- 出勤前 --}}
     @if ($state === 'before')
-      <form method="POST" action="{{ route('attendance.start') }}">
-        @csrf
-      <button type="submit" class="btn btn-black">出勤</button>
-      </form>
+      <div class="att__actions">
+        <form method="POST" action="{{ route('attendance.start') }}">
+          @csrf
+          <button class="btn btn-black">出勤</button>
+        </form>
+      </div>
 
     {{-- 出勤後 --}}
     @elseif ($state === 'working')
       <div class="att__actions att__actions--row">
-        <button class="btn btn-black">退勤</button>
-        <button class="btn btn-white">休憩入</button>
+        <form method="POST" action="{{ route('attendance.end') }}">
+          @csrf
+          <button type="submit" class="btn btn-black">退勤</button>
+        </form>
+        <form method="POST" action="{{ route('attendance.break.start') }}">
+          @csrf
+          <button type="submit" class="btn btn-white">休憩入</button>
+        </form>
       </div>
 
     {{-- 休憩中 --}}
     @elseif ($state === 'breaking')
       <div class="att__actions">
-        <button class="btn btn-white">休憩戻</button>
+        <form method="POST" action="{{ route('attendance.break.end') }}">
+          @csrf
+          <button type="submit" class="btn btn-white">休憩戻</button>
+        </form>
       </div>
 
     {{-- 退勤後 --}}

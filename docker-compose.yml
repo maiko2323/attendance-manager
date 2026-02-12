@@ -11,6 +11,8 @@ services:
 
   php:
     build: ./docker/php
+    environment:
+      - TZ=Asia/Tokyo
     volumes:
       - ./src:/var/www/
     depends_on:
@@ -24,6 +26,7 @@ services:
       MYSQL_USER: laravel_user
       MYSQL_PASSWORD: laravel_pass
       MYSQL_ROOT_PASSWORD: rootpass
+      TZ: Asia/Tokyo
     command:
       mysqld --default-authentication-plugin=mysql_native_password
     volumes:

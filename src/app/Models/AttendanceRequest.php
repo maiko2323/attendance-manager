@@ -34,6 +34,6 @@ class AttendanceRequest extends Model
 
     public function requestBreaks(): HasMany
     {
-        return $this->hasMany(RequestBreak::class);
+        return $this->hasMany(RequestBreak::class, 'attendance_request_id');
     }
 }
