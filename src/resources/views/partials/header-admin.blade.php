@@ -7,20 +7,22 @@
                 alt="COACHTECH">
         </a>
 
-        {{-- 管理者ログイン画面：ロゴのみ --}}
+        @php
+            $type = $type ?? 'default';
+        @endphp
+
         @if ($type === 'login')
             <div class="g-header__spacer"></div>
 
-        {{-- 管理者ログイン後 --}}
         @else
             <nav class="g-header__nav">
-                <a href="{{ url('/admin/attendance/list') }}">勤怠一覧</a>
-                <a href="{{ url('/admin/staff/list') }}">スタッフ一覧</a>
-                <a href="{{ url('/stamp_correction_request/list') }}">申請一覧</a>
+                <a href="{{ route('admin.attendance.list') }}">勤怠一覧</a>
+                <a href="{{ route('admin.staff.list') }}">スタッフ一覧</a>
+                <a href="{{ route('stamp.request.list') }}">申請一覧</a>
 
-                <form method="POST" action="{{ url('/admin/logout') }}" class="g-header__logout">
+                <form method="POST" action="{{ route('admin.logout') }}" class="g-header__logout">
                     @csrf
-                    <button type="submit">ログアウト</button>
+                    <button type="submit" class="g-header__logout">ログアウト</button>
                 </form>
             </nav>
         @endif

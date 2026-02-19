@@ -2,7 +2,7 @@
 
 @section('title', '申請一覧')
 
-@section('header_type', 'default')
+@section('header_type', $isAdmin ? 'admin' : 'default')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/requestlist.css') }}">
@@ -18,12 +18,12 @@
         </h1>
 
         <div class="requestlist__tabs">
-            <a href="{{ route('stamp_correction_request.list', ['tab' => 'pending']) }}"
+            <a href="{{ route('stamp.request.list', ['tab' => 'pending']) }}"
                 class="requestlist__tab {{ $tab === 'pending' ? 'is-active' : '' }}">
                 承認待ち
             </a>
 
-            <a href="{{ route('stamp_correction_request.list', ['tab' => 'approved']) }}"
+            <a href="{{ route('stamp.request.list', ['tab' => 'approved']) }}"
                 class="requestlist__tab {{ $tab === 'approved' ? 'is-active' : '' }}">
                 承認済み
             </a>
@@ -47,7 +47,7 @@
                     @forelse($requests as $req)
                         <tr>
                             <td>{{ $req->status === 'pending' ? '承認待ち' : '承認済み' }}</td>
-                            <td>{{ Auth::user()->name }}</td>
+                            <td>{{ $isAdmin ? $req->user->name : Auth::user()->name }}</td>
 
                             <td>
                                 {{ $req->attendance?->work_date
@@ -61,7 +61,9 @@
 
                             <td>
                                 <a class="requestlist__detail"
-                                    href="{{ route('attendance.detail', ['date' => $req->attendance?->work_date]) }}">
+                                    href="{{ $isAdmin
+                                        ? route('admin.stamp_correction_request.approve.show', $req->id)
+                                        : route('attendance.detail', ['date' => $req->attendance->work_date]) }}">
                                     詳細
                                 </a>
                             </td>

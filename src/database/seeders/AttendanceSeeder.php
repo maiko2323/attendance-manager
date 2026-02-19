@@ -16,7 +16,7 @@ class AttendanceSeeder extends Seeder
      */
     public function run()
     {
-        $users = User::all();
+        $users = User::where('role', 'user')->get();
 
         $months = [
             [

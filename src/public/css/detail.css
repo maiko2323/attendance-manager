@@ -4,10 +4,8 @@
     min-width: 1400px;
     margin: 0 auto;
     padding: 60px 0 80px;
-    /* 上を少し浅く */
 }
 
-/* ===== title ===== */
 .attdetail__title {
     width: 900px;
     margin: 0 auto 80px;
@@ -48,10 +46,8 @@
 .attdetail__table th,
 .attdetail__table td {
     padding: 22px 28px;
-    /* ←余裕を出す（18/22→増やす） */
     vertical-align: middle;
     border-bottom: none;
-    /* 罫線はtrで引く */
 }
 
 .attdetail__table tr {
@@ -68,6 +64,7 @@
     /* 170→190で少し余裕 */
     color: #737373;
     font-weight: 700;
+    
     white-space: nowrap;
 }
 
@@ -82,18 +79,14 @@
     font-weight: 700;
 }
 
-/* 日付（年 / 月日） */
 .attdetail__date-item {
     width: 96px;
-    /* 時刻と揃える */
     text-align: left;
 }
 
-/* time input */
 .attdetail__time-input {
     width: 96px;
     height: 26px;
-    /* 20→26で“詰まった感”が減る */
     padding: 0 8px;
     text-align: center;
     border: 1px solid #E1E1E1;
@@ -170,6 +163,7 @@
     background: #000;
     color: #fff;
     border-radius: 6px;
+    font-size: 22px;
     font-weight: 700;
     cursor: pointer;
     letter-spacing: 0.15em;

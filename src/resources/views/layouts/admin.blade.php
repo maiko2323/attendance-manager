@@ -7,6 +7,7 @@
     <title>@yield('title', '管理者画面')</title>
 
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @stack('styles')
 </head>
 <body>
     @php

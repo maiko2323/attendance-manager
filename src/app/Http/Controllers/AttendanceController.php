@@ -250,14 +250,18 @@ class AttendanceController extends Controller
         return redirect()->route('attendance.detail', ['date' => $workDate]);
     }
 
-    public function stampCorrectionRequestList(Request $request)
+    public function requestList(Request $request)
     {
-        // tab = pending | approved
         $tab = $request->query('tab', 'pending');
+        $isAdmin = Auth::user()->role === 'admin';
 
-        $query = AttendanceRequest::where('user_id', Auth::id())
-            ->with('attendance')
+        $query = AttendanceRequest::query()
+            ->with('attendance', 'user')
             ->orderByDesc('created_at');
+
+        if (! $isAdmin) {
+            $query->where('user_id', Auth::id());
+        }
 
         if ($tab === 'approved') {
             $query->where('status', 'approved');
@@ -268,7 +272,7 @@ class AttendanceController extends Controller
 
         $requests = $query->get();
 
-        return view('attendance.stamp_correction_request_list', compact('requests', 'tab'));
+        return view('attendance.request-list', compact('requests', 'tab', 'isAdmin'));
     }
 
 }

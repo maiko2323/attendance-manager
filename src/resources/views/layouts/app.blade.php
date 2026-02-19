@@ -14,7 +14,15 @@
         $headerType = trim($__env->yieldContent('header_type', 'default'));
     @endphp
 
-    @include('partials.header', ['type' => $headerType])
+    @php
+        $headerType = trim($__env->yieldContent('header_type')) ?: 'default';
+    @endphp
+
+    @if($headerType === 'admin')
+        @include('partials.header-admin', ['type' => $headerType])
+    @else
+        @include('partials.header', ['type' => $headerType])
+    @endif
 
     <main class="l-main">
         @yield('content')
