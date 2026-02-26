@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AttendanceUpdateRequest;
 use App\Models\Attendance;
 use App\Models\AttendanceRequest;
 use App\Models\BreakTime;
@@ -69,7 +70,6 @@ class AttendanceController extends Controller
             ->where('work_date', today())
             ->firstOrFail();
 
-        // 出勤中以外は休憩入できない
         if ($attendance->status !== 'working') {
             return back();
         }
@@ -164,29 +164,45 @@ class AttendanceController extends Controller
         $pendingRequest = null;
         $isPending = false;
 
+        $b1s = optional($attendance?->breaks->firstWhere('break_no', 1))->break_start_at;
+        $b1e = optional($attendance?->breaks->firstWhere('break_no', 1))->break_end_at;
+        $b2s = optional($attendance?->breaks->firstWhere('break_no', 2))->break_start_at;
+        $b2e = optional($attendance?->breaks->firstWhere('break_no', 2))->break_end_at;
+
         if ($attendance) {
             $pendingRequest = AttendanceRequest::where('attendance_id', $attendance->id)
-            ->where('status', 'pending')
-            ->with('requestBreaks')
-            ->latest()
-            ->first();
+                ->where('status', 'pending')
+                ->with('requestBreaks')
+                ->latest()
+                ->first();
 
             $isPending = (bool) $pendingRequest;
+
+            if ($isPending) {
+                $rb1 = $pendingRequest->requestBreaks->firstWhere('break_no', 1);
+                $rb2 = $pendingRequest->requestBreaks->firstWhere('break_no', 2);
+
+                $b1s = $rb1?->break_start_at;
+                $b1e = $rb1?->break_end_at;
+                $b2s = $rb2?->break_start_at;
+                $b2e = $rb2?->break_end_at;
+            }
         }
 
-        return view('attendance.detail', compact('workDate', 'attendance', 'isPending', 'pendingRequest'));
+        return view('attendance.detail', compact('workDate', 'attendance', 'isPending', 'pendingRequest', 'b1s', 'b1e', 'b2s', 'b2e'));
     }
 
 
-    public function requestUpdate(Request $request, string $date)
+    public function requestUpdate(AttendanceUpdateRequest $request, string $date)
     {
+        $data = $request->validated();
+
         $workDate = \Carbon\Carbon::parse($date)->toDateString();
 
         $attendance = Attendance::where('user_id', Auth::id())
             ->where('work_date', $workDate)
             ->first();
 
-    // 休みの日は attendance を作る
         if (!$attendance) {
             $attendance = Attendance::create([
                 'user_id'   => Auth::id(),
@@ -195,7 +211,6 @@ class AttendanceController extends Controller
             ]);
         }
 
-    // 既に申請中なら戻す
         $already = AttendanceRequest::where('attendance_id', $attendance->id)
             ->where('status', 'pending')
             ->exists();
@@ -204,21 +219,8 @@ class AttendanceController extends Controller
             return redirect()->route('attendance.detail', ['date' => $workDate]);
         }
 
-        $data = $request->validate([
-            'clock_in_at'  => ['nullable', 'date_format:H:i'],
-            'clock_out_at' => ['nullable', 'date_format:H:i'],
-            'reason'       => ['required', 'string'],
-
-            'breaks'         => ['array'],
-            'breaks.1.start' => ['nullable', 'date_format:H:i'],
-            'breaks.1.end'   => ['nullable', 'date_format:H:i'],
-            'breaks.2.start' => ['nullable', 'date_format:H:i'],
-            'breaks.2.end'   => ['nullable', 'date_format:H:i'],
-        ]);
-
         DB::transaction(function () use ($attendance, $data) {
 
-        // ① 申請作成
             $requestRecord = AttendanceRequest::create([
                 'attendance_id'        => $attendance->id,
                 'user_id'              => Auth::id(),
@@ -229,14 +231,11 @@ class AttendanceController extends Controller
                 'approved_at'          => null,
             ]);
 
-        // ② 休憩1・2（最大2回）
             foreach ([1, 2] as $no) {
                 $start = $data['breaks'][$no]['start'] ?? null;
                 $end   = $data['breaks'][$no]['end'] ?? null;
 
-                if (!$start && !$end) {
-                    continue;
-                }
+                if (!$start && !$end) continue;
 
                 RequestBreak::create([
                     'attendance_request_id' => $requestRecord->id,

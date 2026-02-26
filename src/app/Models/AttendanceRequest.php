@@ -27,13 +27,14 @@ class AttendanceRequest extends Model
         return $this->belongsTo(Attendance::class);
     }
 
+    public function requestBreaks(): HasMany
+    {
+        return $this->hasMany(RequestBreak::class, 'attendance_request_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function requestBreaks(): HasMany
-    {
-        return $this->hasMany(RequestBreak::class, 'attendance_request_id');
-    }
 }

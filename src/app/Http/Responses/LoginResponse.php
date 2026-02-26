@@ -22,7 +22,7 @@ class LoginResponse implements LoginResponseContract
 
                 return redirect()
                     ->route('admin.login')
-                    ->withErrors(['email' => '管理者アカウントではありません。'])
+                    ->withErrors(['email' => 'ログイン情報が登録されていません'])
                     ->onlyInput('email');
             }
             $request->session()->put('login_type', 'admin');
@@ -32,6 +32,11 @@ class LoginResponse implements LoginResponseContract
         }
 
         $request->session()->forget('login_type');
+
+        if ($user && ! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
         return redirect()->route('attendance.index');
     }
 }

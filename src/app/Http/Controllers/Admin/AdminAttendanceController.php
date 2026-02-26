@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AdminUpdateRequest;
+use App\Http\Requests\AttendanceUpdateRequest;
 use App\Models\Attendance;
 use App\Models\AttendanceRequest;
 use App\Models\User;
@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminAttendanceController extends Controller
 {
@@ -84,7 +85,7 @@ class AdminAttendanceController extends Controller
 
     public function staffMonthly(User $user)
     {
-        $month = request('month', now()->format('Y-m')); // "2026-02"
+        $month = request('month', now()->format('Y-m'));
         $current = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
 
         $start = $current->copy()->startOfMonth();
@@ -99,7 +100,7 @@ class AdminAttendanceController extends Controller
             ->where('user_id', $user->id)
             ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
             ->get()
-            ->keyBy('work_date'); // 'YYYY-MM-DD' => Attendance
+            ->keyBy('work_date');
 
         $prevMonth = $current->copy()->subMonth()->format('Y-m');
         $nextMonth = $current->copy()->addMonth()->format('Y-m');
@@ -116,31 +117,119 @@ class AdminAttendanceController extends Controller
         ));
     }
 
-    public function detail(Attendance $attendance)
+    public function staffMonthlyCsv(Request $request, \App\Models\User $user): StreamedResponse
     {
-        $attendance->load(['user', 'breaks']);
+        $month = $request->query('month', now()->format('Y-m'));
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            abort(400, 'Invalid month format');
+        }
 
-        $workDate = $attendance->work_date;
+        $current = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $start = $current->copy()->startOfMonth();
+        $end   = $current->copy()->endOfMonth();
 
-        $break1 = $attendance->breaks->firstWhere('break_no', 1);
-        $break2 = $attendance->breaks->firstWhere('break_no', 2);
+        $attendances = Attendance::with('breaks')
+            ->where('user_id', $user->id)
+            ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
+            ->get()
+            ->keyBy('work_date');
 
-        return view('admin.attendance.detail', compact('attendance', 'workDate', 'break1', 'break2'));
+        $dates = collect();
+        for ($d = $start->copy(); $d <= $end; $d->addDay()) {
+            $dates->push($d->copy());
+        }
+
+        $fileName = "{$user->name}_{$current->format('Y_m')}_勤怠.csv";
+
+        return response()->streamDownload(function () use ($dates, $attendances) {
+            $out = fopen('php://output', 'w');
+
+            $this->csvPut($out, ['日付', '出勤', '退勤', '休憩', '合計']);
+
+            foreach ($dates as $date) {
+                $key = $date->toDateString();
+                $a = $attendances->get($key);
+
+                $clockIn  = $a?->clock_in_at ? Carbon::parse($a->clock_in_at)->format('H:i') : '';
+                $clockOut = $a?->clock_out_at ? Carbon::parse($a->clock_out_at)->format('H:i') : '';
+
+                $breakMinutes = 0;
+                if ($a) {
+                    foreach ($a->breaks as $b) {
+                        if ($b->break_start_at && $b->break_end_at) {
+                            $breakMinutes += Carbon::parse($b->break_start_at)
+                                ->diffInMinutes(Carbon::parse($b->break_end_at));
+                        }
+                    }
+                }
+                $breakStr = $breakMinutes ? sprintf('%d:%02d', intdiv($breakMinutes, 60), $breakMinutes % 60) : '';
+
+                $workStr = '';
+                if ($a?->clock_in_at && $a?->clock_out_at) {
+                    $workMinutes = Carbon::parse($a->clock_in_at)->diffInMinutes(Carbon::parse($a->clock_out_at));
+                    $workMinutes = max(0, $workMinutes - $breakMinutes);
+                    $workStr = sprintf('%d:%02d', intdiv($workMinutes, 60), $workMinutes % 60);
+                }
+
+                $this->csvPut($out, [
+                    $date->format('m/d(D)'),
+                    $clockIn,
+                    $clockOut,
+                    $breakStr,
+                    $workStr,
+                ]);
+            }
+
+            fclose($out);
+        }, $fileName, [
+            'Content-Type' => 'text/csv; charset=Shift_JIS',
+        ]);
     }
 
-    public function update(AdminUpdateRequest $request, Attendance $attendance)
+    private function csvPut($handle, array $row): void
+    {
+        $converted = array_map(fn($v) => mb_convert_encoding((string)$v, 'SJIS-win', 'UTF-8'), $row);
+        fputcsv($handle, $converted);
+    }
+
+    public function detail(User $user, string $date)
+    {
+        $targetDate = Carbon::parse($date)->toDateString();
+
+        $attendance = Attendance::where('user_id', $user->id)
+            ->where('work_date', $targetDate)
+            ->with('breaks')
+            ->first();
+
+        $isPending = false;
+
+        if ($attendance) {
+            $isPending = AttendanceRequest::where('attendance_id', $attendance->id)
+                ->where('status', 'pending')
+                ->exists();
+        }
+
+        return view('admin.attendance.detail', compact(
+            'user',
+            'attendance',
+            'targetDate',
+            'isPending'
+        ));
+    }
+
+    public function update(AttendanceUpdateRequest $request, Attendance $attendance)
     {
         $validated = $request->validated();
 
-        $attendance->clock_in_at  = $validated['clock_in_at'] ?? null;
-        $attendance->clock_out_at = $validated['clock_out_at'] ?? null;
+        $attendance->clock_in_at  = $this->normalizeTime(data_get($validated, 'clock_in_at'));
+        $attendance->clock_out_at = $this->normalizeTime(data_get($validated, 'clock_out_at'));
 
-        $attendance->note = $validated['note'];
+        $attendance->reason = $validated['reason'] ?? null;
         $attendance->save();
 
         foreach ([1, 2] as $no) {
-            $start = data_get($validated, "breaks.$no.start"); // "H:i" or null
-            $end   = data_get($validated, "breaks.$no.end");   // "H:i" or null
+            $start = $this->normalizeTime(data_get($validated, "breaks.$no.start"));
+            $end   = $this->normalizeTime(data_get($validated, "breaks.$no.end"));
 
             if (!$start && !$end) {
                 $attendance->breaks()->where('break_no', $no)->delete();
@@ -158,48 +247,111 @@ class AdminAttendanceController extends Controller
 
         return redirect()
             ->route('admin.attendance.detail', $attendance->id)
-            ->with('message', '勤怠を更新しました');
+            ->with('message', '勤怠を更新しました。');
     }
 
-    private function mergeDateTime(string $date, ?string $time): ?string
+
+    public function upsert(AttendanceUpdateRequest $request, User $user, string $date)
+    {
+        $validated = $request->validated();
+        $date = Carbon::parse($date)->toDateString();
+
+        $attendance = Attendance::firstOrNew([
+            'user_id'   => $user->id,
+            'work_date' => $date,
+        ]);
+
+        $attendance->clock_in_at  = $this->normalizeTime(data_get($validated, 'clock_in_at'));
+        $attendance->clock_out_at = $this->normalizeTime(data_get($validated, 'clock_out_at'));
+        $attendance->reason         = $validated['reason'] ?? null;
+
+        $attendance->status = $attendance->clock_out_at
+            ? 'after'
+            : ($attendance->clock_in_at ? 'working' : 'before');
+
+        $attendance->save();
+
+        foreach ([1, 2] as $no) {
+            $start = $this->normalizeTime(data_get($validated, "breaks.$no.start"));
+            $end   = $this->normalizeTime(data_get($validated, "breaks.$no.end"));
+
+            if (!$start && !$end) {
+                $attendance->breaks()->where('break_no', $no)->delete();
+                continue;
+            }
+
+            $attendance->breaks()->updateOrCreate(
+                ['break_no' => $no],
+                [
+                    'break_start_at' => $start,
+                    'break_end_at'   => $end ?: null,
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('admin.attendance.detail', ['user' => $user->id, 'date' => $date])
+            ->with('message', '勤怠を更新しました。');
+    }
+
+    private function normalizeTime(?string $time): ?string
     {
         if (!$time) return null;
-        return Carbon::parse("$date $time")->format('Y-m-d H:i:s');
+        return strlen($time) === 5 ? $time . ':00' : $time;
     }
 
     public function approveShow($id)
     {
-        $req = AttendanceRequest::with(['user', 'attendance.breaks'])->findOrFail($id);
+        $req = AttendanceRequest::with(['user', 'attendance', 'requestBreaks'])
+            ->findOrFail($id);
 
-        $break1 = $req->attendance?->breaks->firstWhere('break_no', 1);
-        $break2 = $req->attendance?->breaks->firstWhere('break_no', 2);
+        $break1 = $req->requestBreaks->firstWhere('break_no', 1);
+        $break2 = $req->requestBreaks->firstWhere('break_no', 2);
 
         $workDate = $req->attendance?->work_date;
 
-        return view('admin.attendance.request-approve', compact('req'));
+        return view('admin.attendance.request-approve', compact('req', 'break1', 'break2', 'workDate'));
     }
 
     public function approve($id)
     {
-        DB::transaction(function () use ($id) {
-            $req = AttendanceRequest::with('attendance')->lockForUpdate()->findOrFail($id);
+        $req = AttendanceRequest::with(['attendance', 'requestBreaks'])->findOrFail($id);
 
-            if ($req->status === 'approved') return;
+        DB::transaction(function () use ($req) {
+            $attendance = $req->attendance;
 
-            // 出退勤だけ勤怠へ反映（休憩申請カラムが無いので breaks は触らない）
-            $req->attendance->update([
-                'clock_in_at'  => $req->request_clock_in_at,
-                'clock_out_at' => $req->request_clock_out_at,
-            ]);
+            $attendance->clock_in_at  = $this->normalizeTime($req->request_clock_in_at);
+            $attendance->clock_out_at = $this->normalizeTime($req->request_clock_out_at);
+            $attendance->save();
 
-            $req->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-            ]);
+            foreach ([1, 2] as $no) {
+                $rb = $req->requestBreaks->firstWhere('break_no', $no);
+
+                if (!$rb || (!$rb->break_start_at && !$rb->break_end_at)) {
+                    $attendance->breaks()->where('break_no', $no)->delete();
+                    continue;
+                }
+
+                $attendance->breaks()->updateOrCreate(
+                    ['break_no' => $no],
+                    [
+                        'break_start_at' => $this->normalizeTime($rb->break_start_at),
+                        'break_end_at'   => $this->normalizeTime($rb->break_end_at),
+                    ]
+                );
+            }
+
+            $attendance->status = $attendance->clock_out_at
+                ? 'after'
+                : ($attendance->clock_in_at ? 'working' : 'before');
+            $attendance->save();
+
+            $req->status = 'approved';
+            $req->approved_at = now();
+            $req->save();
         });
 
-        // 同じ画面に戻す → ボタンが「承認済み」へ
-        return redirect()->route('admin.stamp_correction_request.approve.show', $id);
+        return back();
     }
 
     public function logout(Request $request)

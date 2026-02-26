@@ -11,10 +11,6 @@
 </head>
 <body>
     @php
-        $headerType = trim($__env->yieldContent('header_type', 'default'));
-    @endphp
-
-    @php
         $headerType = trim($__env->yieldContent('header_type')) ?: 'default';
     @endphp
 

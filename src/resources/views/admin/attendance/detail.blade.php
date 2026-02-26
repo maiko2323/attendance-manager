@@ -17,32 +17,31 @@
             勤怠詳細
         </h1>
 
-        <form method="POST" action="{{ route('admin.attendance.update', $attendance->id) }}">
+        <form method="POST"action="{{ route('admin.attendance.upsert', ['user' => $user->id, 'date' => $targetDate]) }}">
             @csrf
-            @method('PUT')
 
             @php
-                $workDate = \Carbon\Carbon::parse($attendance->work_date)->toDateString();
+                $workDate = $targetDate;
 
-                $in  = $attendance->clock_in_at;
-                $out = $attendance->clock_out_at;
+                $in  = $attendance?->clock_in_at;
+                $out = $attendance?->clock_out_at;
 
-                $break1 = $attendance->breaks?->firstWhere('break_no', 1);
-                $break2 = $attendance->breaks?->firstWhere('break_no', 2);
+                $break1 = $attendance?->breaks?->firstWhere('break_no', 1);
+                $break2 = $attendance?->breaks?->firstWhere('break_no', 2);
 
                 $b1s = $break1?->break_start_at;
                 $b1e = $break1?->break_end_at;
                 $b2s = $break2?->break_start_at;
                 $b2e = $break2?->break_end_at;
 
-                $note = $attendance->note ?? '';
+                $note = $attendance?->note ?? '';
             @endphp
 
             <div class="attdetail__card">
                 <table class="attdetail__table">
                     <tr>
                         <th>名前</th>
-                        <td class="attdetail__value">{{ $attendance->user->name }}</td>
+                        <td class="attdetail__value">{{ $user->name }}</td>
                     </tr>
 
                     <tr>
@@ -57,15 +56,15 @@
                         <th>出勤・退勤</th>
                         <td class="attdetail__time">
                             <input type="time" name="clock_in_at" class="attdetail__time-input"
-                                value="{{ old('clock_in_at', $in ? \Carbon\Carbon::parse($in)->format('H:i') : '') }}">
+                                value="{{ old('clock_in_at', $in ? \Carbon\Carbon::parse($in)->format('H:i') : '') }}" @disabled($isPending)>
                             <span class="attdetail__tilde">〜</span>
                             <input type="time" name="clock_out_at" class="attdetail__time-input"
-                                value="{{ old('clock_out_at', $out ? \Carbon\Carbon::parse($out)->format('H:i') : '') }}">
+                                value="{{ old('clock_out_at', $out ? \Carbon\Carbon::parse($out)->format('H:i') : '') }}" @disabled($isPending)>
                             @error('clock_in_at')
-                                <p class="attdetail__error">{{ $message }}</p>
+                                <div class="error-message">{{ $message }}</div>
                             @enderror
                             @error('clock_out_at')
-                                <p class="attdetail__error">{{ $message }}</p>
+                                <div class="error-message">{{ $message }}</div>
                             @enderror
                         </td>
                     </tr>
@@ -74,12 +73,16 @@
                         <th>休憩</th>
                         <td class="attdetail__time">
                             <input type="time" name="breaks[1][start]" class="attdetail__time-input"
-                                value="{{ old('breaks.1.start', $b1s ? \Carbon\Carbon::parse($b1s)->format('H:i') : '') }}">
+                                value="{{ old('breaks.1.start', $b1s ? \Carbon\Carbon::parse($b1s)->format('H:i') : '') }}" @disabled($isPending)>
                             <span class="attdetail__tilde">〜</span>
                             <input type="time" name="breaks[1][end]" class="attdetail__time-input"
-                                value="{{ old('breaks.1.end', $b1e ? \Carbon\Carbon::parse($b1e)->format('H:i') : '') }}">
-                            @error('breaks.1.start') <p class="attdetail__error">{{ $message }}</p> @enderror
-                            @error('breaks.1.end')   <p class="attdetail__error">{{ $message }}</p> @enderror
+                                value="{{ old('breaks.1.end', $b1e ? \Carbon\Carbon::parse($b1e)->format('H:i') : '') }}" @disabled($isPending)>
+                            @error('breaks.1.start')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                            @error('breaks.1.end')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
                         </td>
                     </tr>
 
@@ -87,32 +90,46 @@
                         <th>休憩2</th>
                         <td class="attdetail__time">
                             <input type="time" name="breaks[2][start]" class="attdetail__time-input"
-                                value="{{ old('breaks.2.start', $b2s ? \Carbon\Carbon::parse($b2s)->format('H:i') : '') }}">
+                                value="{{ old('breaks.2.start', $b2s ? \Carbon\Carbon::parse($b2s)->format('H:i') : '') }}" @disabled($isPending)>
                             <span class="attdetail__tilde">〜</span>
                             <input type="time" name="breaks[2][end]" class="attdetail__time-input"
-                                value="{{ old('breaks.2.end', $b2e ? \Carbon\Carbon::parse($b2e)->format('H:i') : '') }}">
-                            @error('breaks.2.start') <p class="attdetail__error">{{ $message }}</p> @enderror
-                            @error('breaks.2.end')   <p class="attdetail__error">{{ $message }}</p> @enderror
+                                value="{{ old('breaks.2.end', $b2e ? \Carbon\Carbon::parse($b2e)->format('H:i') : '') }}" @disabled($isPending) >
+                            @error('breaks.2.start')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                            @error('breaks.2.end')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
                         </td>
                     </tr>
 
                     <tr>
                         <th>備考</th>
                         <td class="attdetail__memo">
-                            <input type="text" name="note" class="attdetail__memo-input"
-                                value="{{ old('note', $note) }}">
-                            @error('note')
-                                <p class="attdetail__error">{{ $message }}</p>
+                            <input type="text" name="reason" class="attdetail__memo-input"
+                                value="{{ old('reason', $attendance->reason ?? '') }}" @disabled($isPending)>
+                            @error('reason')
+                                <div class="error-message">{{ $message }}</div>
                             @enderror
                         </td>
                     </tr>
                 </table>
             </div>
 
-            <div class="attdetail__actions">
-                <button type="submit" class="attdetail__btn">修正</button>
-            </div>
+            @if(!$isPending)
+                <div class="attdetail__actions">
+                    <button type="submit" class="attdetail__btn">修正</button>
+                </div>
+            @endif
         </form>
+
+        @if($isPending)
+            <p class="attdetail__notice">*承認待ちのため修正はできません。</p>
+        @endif
+
+        @if(session('message'))
+            <p class="attdetail__notice">{{ session('message') }}</p>
+        @endif
     </div>
 </div>
 @endsection

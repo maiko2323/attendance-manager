@@ -34,6 +34,7 @@
                 <span>翌月</span>
                 <img src="{{ asset('images/arrow.png') }}" alt="" class="attlist-nav__arrow is-left">
             </a>
+
         </div>
 
         <div class="attlist__tablewrap">
@@ -55,41 +56,32 @@
                         $workDate = $date->toDateString();
                         $attendance = $attendances->get($workDate);
 
-                        $in  = $attendance?->clock_in_at;
-                        $out = $attendance?->clock_out_at;
+                        $in  = $attendance?->clock_in_at
+                            ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_in_at)->format('H:i')
+                            : '';
 
-                        $breakMinutes = 0;
-                        if ($attendance) {
-                            foreach ($attendance->breaks ?? [] as $b) {
-                                if ($b->break_start_at && $b->break_end_at) {
-                                    $s = \Carbon\Carbon::createFromFormat('H:i:s', $b->break_start_at);
-                                    $e = \Carbon\Carbon::createFromFormat('H:i:s', $b->break_end_at);
-                                    $breakMinutes += $s->diffInMinutes($e);
-                                }
-                            }
-                        }
-                        $breakLabel = $attendance ? sprintf('%d:%02d', intdiv($breakMinutes, 60), $breakMinutes % 60) : '';
+                        $out = $attendance?->clock_out_at
+                            ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_out_at)->format('H:i')
+                            : '';
 
-                        $totalLabel = '';
-                        if ($attendance && $in && $out) {
-                            $inC  = \Carbon\Carbon::createFromFormat('H:i:s', $in);
-                            $outC = \Carbon\Carbon::createFromFormat('H:i:s', $out);
-                            $workMinutes = $inC->diffInMinutes($outC);
-                            $netMinutes  = max(0, $workMinutes - $breakMinutes);
-                            $totalLabel  = sprintf('%d:%02d', intdiv($netMinutes, 60), $netMinutes % 60);
-                        }
+                        $breakLabel = $attendance ? $attendance->break_label : '';
+
+                        $totalLabel = ($attendance && $attendance->clock_in_at && $attendance->clock_out_at)
+                            ? $attendance->net_label
+                            : '';
                     @endphp
 
                     <tr>
                         <td>{{ $date->isoFormat('MM/DD(ddd)') }}</td>
-                        <td>{{ $in ? \Carbon\Carbon::createFromFormat('H:i:s', $in)->format('H:i') : '' }}</td>
-                        <td>{{ $out ? \Carbon\Carbon::createFromFormat('H:i:s', $out)->format('H:i') : '' }}</td>
-                        <td>{{ $breakLabel }}</td>
-                        <td>{{ $totalLabel }}</td>
+                        <td>{{ $in }}</td>
+                        <td>{{ $out }}</td>
+                        <td>{{ $breakLabel === '0:00' ? '' : $breakLabel }}</td>
+                        <td>{{ $totalLabel === '0:00' ? '' : $totalLabel }}</td>
                         <td>
-                            @if($attendance)
-                                <a class="attlist__detail" href="{{ route('admin.attendance.detail', $attendance->id) }}">詳細</a>
-                            @endif
+                            <a class="attlist__detail"
+                                href="{{ route('admin.attendance.detail', ['user' => $user->id, 'date' => $workDate]) }}">
+                                詳細
+                            </a>
                         </td>
                     </tr>
                 @endforeach
@@ -98,7 +90,13 @@
         </div>
 
         <div class="attlist__actions">
-            <button class="attlist__btn">CSV出力</button>
+            <a href="{{ route('admin.attendance.staff.csv', [
+                'user' => $user->id,
+                'month' => request('month', now()->format('Y-m'))
+                ]) }}"
+                class="attlist__btn">
+                CSV出力
+            </a>
         </div>
 
     </div>

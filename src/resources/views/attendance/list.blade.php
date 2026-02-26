@@ -60,14 +60,26 @@
           <tr>
             <td>{{ $date->isoFormat('MM/DD(ddd)') }}</td>
 
-            <td>{{ $attendance?->clock_in_at ? \Carbon\Carbon::parse($attendance->clock_in_at)->format('H:i') : '' }}</td>
-            <td>{{ $attendance?->clock_out_at ? \Carbon\Carbon::parse($attendance->clock_out_at)->format('H:i') : '' }}</td>
-
-            <td>{{ $attendance ? '1:00' : '' }}</td>
-            <td>{{ $attendance ? '8:00' : '' }}</td>
+            <td>
+              {{ $attendance?->clock_in_at
+                ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_in_at)->format('H:i')
+                : '' }}
+            </td>
 
             <td>
-              <a class="attlist__detail" href="{{ route('attendance.detail', ['date' => $workDate]) }}">詳細</a>
+              {{ $attendance?->clock_out_at
+                ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_out_at)->format('H:i')
+                : '' }}
+            </td>
+
+            <td>{{ ($attendance?->break_label === '0:00') ? '' : ($attendance?->break_label ?? '') }}</td>
+            <td>{{ ($attendance?->net_label === '0:00') ? '' : ($attendance?->net_label ?? '') }}</td>
+
+            <td>
+              <a class="attlist__detail"
+                href="{{ route('attendance.detail', ['date' => $workDate]) }}">
+                詳細
+              </a>
             </td>
           </tr>
         @endforeach

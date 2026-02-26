@@ -6,7 +6,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
-class AdminUpdateRequest extends FormRequest
+class AttendanceUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -33,42 +33,32 @@ class AdminUpdateRequest extends FormRequest
             'breaks.2.start' => ['nullable', 'date_format:H:i'],
             'breaks.2.end'   => ['nullable', 'date_format:H:i'],
 
-            'note' => ['required', 'string'],
+            'reason' => ['required', 'string'],
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($v) {
+
             $in  = $this->input('clock_in_at');
             $out = $this->input('clock_out_at');
 
-            // 1) 出勤・退勤（要件①）
-            if ($in && $out && $out < $in) {
-                $v->errors()->add('clock_out_at', '出勤時間もしくは退勤時間が不適切な値です');
-            }
-
+            $hasAnyBreak = false;
             foreach ([1, 2] as $no) {
                 $bs = data_get($this->input('breaks'), "$no.start");
                 $be = data_get($this->input('breaks'), "$no.end");
-
-                // 休憩開始と終了の前後
-                if ($bs && $be && $be < $bs) {
-                    $v->errors()->add("breaks.$no.end", '休憩時間が不適切な値です');
-                }
-
-                // 2) 休憩開始が出勤より前 or 退勤より後
-                if ($bs && $in && $bs < $in) {
+                if (($bs && !$be) || (!$bs && $be)) {
                     $v->errors()->add("breaks.$no.start", '休憩時間が不適切な値です');
+                    continue;
                 }
-                if ($bs && $out && $bs > $out) {
-                    $v->errors()->add("breaks.$no.start", '休憩時間が不適切な値です');
-                }
+            }
 
-                // 3) 休憩終了が退勤より後
-                if ($be && $out && $be > $out) {
-                    $v->errors()->add("breaks.$no.end", '休憩時間もしくは退勤時間が不適切な値です');
-                }
+            $hasAnyTime = ($in || $out || $hasAnyBreak);
+
+            if ($hasAnyTime && (!$in || !$out)) {
+                $v->errors()->add('clock_out_at', '出勤時間もしくは退勤時間が不適切な値です');
+                return;
             }
         });
     }
@@ -76,7 +66,7 @@ class AdminUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'note.required' => '備考を記入してください',
+            'reason.required' => '備考を記入してください',
         ];
     }
 }

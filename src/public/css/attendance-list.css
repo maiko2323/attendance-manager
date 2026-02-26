@@ -141,7 +141,7 @@
 .attlist__btn {
     padding: 10px 28px;
     font-size: 22px;
-    border: none;
+    text-decoration: none;
     background: #000000;
     color: #ffffff;
     border-radius: 6px;
