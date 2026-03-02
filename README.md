@@ -111,9 +111,15 @@ docker compose exec php php artisan test
 
 ## 仕様技術（実行環境）
 PHP
+
 Laravel
+
 MySQL
+
 nginx
+
 Docker / docker-compose
+
 Laravel Fortify（認証機能）
+
 FormRequest（バリデーション）
