@@ -62,7 +62,7 @@
                             <td>
                                 <a class="requestlist__detail"
                                     href="{{ $isAdmin
-                                        ? route('admin.stamp_correction_request.approve.show', $req->id)
+                                        ? route('stamp_correction_request.approve.show', $req->id)
                                         : route('attendance.detail', ['date' => $req->attendance->work_date]) }}">
                                     詳細
                                 </a>

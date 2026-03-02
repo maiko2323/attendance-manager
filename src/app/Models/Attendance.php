@@ -44,8 +44,8 @@ class Attendance extends Model
             return 0;
         }
 
-        $in  = Carbon::createFromFormat('H:i:s', $this->clock_in_at);
-        $out = Carbon::createFromFormat('H:i:s', $this->clock_out_at);
+        $in  = Carbon::parse($this->clock_in_at);
+        $out = Carbon::parse($this->clock_out_at);
 
         return (int) $in->diffInMinutes($out, true);
     }
@@ -56,10 +56,10 @@ class Attendance extends Model
 
         foreach ($this->breaks as $b) {
             if ($b->break_start_at && $b->break_end_at) {
-                $s = Carbon::createFromFormat('H:i:s', $b->break_start_at);
-                $e = Carbon::createFromFormat('H:i:s', $b->break_end_at);
+                $s = Carbon::parse($b->break_start_at);
+                $e = Carbon::parse($b->break_end_at);
 
-                $minutes += (int) floor($s->diffInMinutes($e, true));
+                $minutes += (int) $s->diffInMinutes($e, true);
             }
         }
 

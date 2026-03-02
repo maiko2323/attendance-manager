@@ -313,21 +313,26 @@ class AdminAttendanceController extends Controller
         return view('admin.attendance.request-approve', compact('req', 'break1', 'break2', 'workDate'));
     }
 
-    public function approve($id)
+    public function approve(AttendanceUpdateRequest $request, $id)
     {
-        $req = AttendanceRequest::with(['attendance', 'requestBreaks'])->findOrFail($id);
+        $req = AttendanceRequest::with(['attendance', 'requestBreaks'])
+            ->findOrFail($id);
 
-        DB::transaction(function () use ($req) {
+        $data = $request->validated();
+
+        DB::transaction(function () use ($req, $data) {
             $attendance = $req->attendance;
 
-            $attendance->clock_in_at  = $this->normalizeTime($req->request_clock_in_at);
-            $attendance->clock_out_at = $this->normalizeTime($req->request_clock_out_at);
-            $attendance->save();
+            // 出勤・退勤
+            $attendance->clock_in_at  = $data['clock_in_at'];
+            $attendance->clock_out_at = $data['clock_out_at'];
 
+            // 休憩
             foreach ([1, 2] as $no) {
-                $rb = $req->requestBreaks->firstWhere('break_no', $no);
+                $bs = data_get($data['breaks'], "$no.start");
+                $be = data_get($data['breaks'], "$no.end");
 
-                if (!$rb || (!$rb->break_start_at && !$rb->break_end_at)) {
+                if (!$bs && !$be) {
                     $attendance->breaks()->where('break_no', $no)->delete();
                     continue;
                 }
@@ -335,12 +340,13 @@ class AdminAttendanceController extends Controller
                 $attendance->breaks()->updateOrCreate(
                     ['break_no' => $no],
                     [
-                        'break_start_at' => $this->normalizeTime($rb->break_start_at),
-                        'break_end_at'   => $this->normalizeTime($rb->break_end_at),
+                        'break_start_at' => $bs,
+                        'break_end_at'   => $be,
                     ]
                 );
             }
 
+            // ステータス再計算
             $attendance->status = $attendance->clock_out_at
                 ? 'after'
                 : ($attendance->clock_in_at ? 'working' : 'before');

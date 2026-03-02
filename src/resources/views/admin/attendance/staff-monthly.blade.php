@@ -57,11 +57,11 @@
                         $attendance = $attendances->get($workDate);
 
                         $in  = $attendance?->clock_in_at
-                            ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_in_at)->format('H:i')
+                            ? \Carbon\Carbon::createFromFormat('H:i', $attendance->clock_in_at)->format('H:i')
                             : '';
 
                         $out = $attendance?->clock_out_at
-                            ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_out_at)->format('H:i')
+                            ? \Carbon\Carbon::createFromFormat('H:i', $attendance->clock_out_at)->format('H:i')
                             : '';
 
                         $breakLabel = $attendance ? $attendance->break_label : '';

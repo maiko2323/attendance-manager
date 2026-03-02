@@ -70,15 +70,17 @@ Route::prefix('admin')
         Route::put('/attendance/{attendance}', [AdminAttendanceController::class, 'update'])
             ->name('attendance.update');
 
-        Route::get('/stamp_correction_request/approve/{attendance_correct_request_id}',
-            [AdminAttendanceController::class, 'approveShow'])
-            ->name('stamp_correction_request.approve.show');
-
-        Route::post('/stamp_correction_request/approve/{attendance_correct_request_id}',
-            [AdminAttendanceController::class, 'approve'])
-            ->name('stamp_correction_request.approve');
-
         Route::post('/logout', [AdminAttendanceController::class, 'logout'])
             ->name('logout');
     });
 
+Route::middleware(['auth', 'admin'])->group(function () {
+
+    Route::get('/stamp_correction_request/approve/{attendance_correct_request_id}',
+        [AdminAttendanceController::class, 'approveShow'])
+        ->name('stamp_correction_request.approve.show');
+
+    Route::post('/stamp_correction_request/approve/{attendance_correct_request_id}',
+        [AdminAttendanceController::class, 'approve'])
+        ->name('stamp_correction_request.approve');
+});

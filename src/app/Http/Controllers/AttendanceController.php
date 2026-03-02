@@ -23,7 +23,9 @@ class AttendanceController extends Controller
 
         $state = $attendance?->status ?? 'before';
 
-        return view('attendance.index', compact('state'));
+        $now = Carbon::now();
+
+        return view('attendance.index', compact('state', 'now'));
     }
 
     public function start(Request $request)
@@ -134,7 +136,7 @@ class AttendanceController extends Controller
             ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
             ->with('breaks')
             ->get()
-            ->keyBy('work_date');
+            ->keyBy(fn ($a) => \Carbon\Carbon::parse($a->work_date)->toDateString());
 
         $dates = \Carbon\CarbonPeriod::create($start, $end);
 

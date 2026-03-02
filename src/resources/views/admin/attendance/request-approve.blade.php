@@ -22,7 +22,7 @@
         $out = $req->request_clock_out_at;
 
         $fmt = function ($t) {
-            return $t ? \Carbon\Carbon::createFromFormat('H:i:s', $t)->format('H:i') : '';
+            return $t ? \Carbon\Carbon::parse($t)->format('H:i') : '';
         };
 
         $b1s = $break1?->break_start_at;
@@ -89,7 +89,7 @@
             承認済み
             </button>
         @else
-            <form method="POST" action="{{ route('admin.stamp_correction_request.approve', $req->id) }}">
+            <form method="POST" action="{{ route('stamp_correction_request.approve', $req->id) }}">
             @csrf
             <button type="submit" class="attdetail__btn">承認</button>
             </form>

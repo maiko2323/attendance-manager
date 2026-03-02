@@ -10,13 +10,15 @@ use App\Http\Responses\LoginResponse;
 use App\Http\Responses\LogoutResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
 use Laravel\Fortify\Fortify;
-use Illuminate\Support\ServiceProvider;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -33,6 +35,18 @@ class FortifyServiceProvider extends ServiceProvider
                 return view('admin.auth.login');
             }
             return view('auth.login');
+        });
+
+        Fortify::authenticateUsing(function (Request $request) {
+            $credentials = $request->only('email', 'password');
+
+            if (Auth::attempt($credentials, $request->boolean('remember'))) {
+                return Auth::user();
+            }
+
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['ログイン情報が登録されていません'],
+            ]);
         });
 
         Fortify::registerView(fn () => view('auth.register'));

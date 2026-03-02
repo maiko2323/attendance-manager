@@ -62,13 +62,13 @@
 
             <td>
               {{ $attendance?->clock_in_at
-                ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_in_at)->format('H:i')
+                ? \Carbon\Carbon::createFromFormat('H:i', $attendance->clock_in_at)->format('H:i')
                 : '' }}
             </td>
 
             <td>
               {{ $attendance?->clock_out_at
-                ? \Carbon\Carbon::createFromFormat('H:i:s', $attendance->clock_out_at)->format('H:i')
+                ? \Carbon\Carbon::createFromFormat('H:i', $attendance->clock_out_at)->format('H:i')
                 : '' }}
             </td>
 

@@ -24,10 +24,14 @@
     </div>
 
     {{-- 日付 --}}
-    <div class="att__date" id="todayDate">----</div>
+    <div class="att__date" id="todayDate">
+      {{ $now->format('Y年n月j日') }}({{ ['日','月','火','水','木','金','土'][$now->dayOfWeek] }})
+    </div>
 
     {{-- 時刻 --}}
-    <div class="att__time" id="currentTime">--:--</div>
+    <div class="att__time" id="currentTime">
+      {{ $now->format('H:i') }}
+    </div>
 
     {{-- 出勤前 --}}
     @if ($state === 'before')
@@ -68,26 +72,4 @@
   </div>
 </div>
 
-@push('scripts')
-<script>
-  function pad(n){ return String(n).padStart(2,'0'); }
-  function jpDow(d){ return ['日','月','火','水','木','金','土'][d]; }
-
-  function render(){
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth()+1;
-    const d = now.getDate();
-    const dow = jpDow(now.getDay());
-
-    const hh = pad(now.getHours());
-    const mm = pad(now.getMinutes());
-
-    document.getElementById('todayDate').textContent = `${y}年${m}月${d}日(${dow})`;
-    document.getElementById('currentTime').textContent = `${hh}:${mm}`;
-  }
-  render();
-  setInterval(render, 1000);
-</script>
-@endpush
 @endsection
