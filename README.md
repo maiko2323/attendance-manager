@@ -6,16 +6,30 @@ Laravel × Docker で構築した勤怠管理アプリです。
 1. Dockerを起動
 
 2. プロジェクト直下で実行
+```
 git clone https://github.com/maiko2323/attendance-manager
 cd attendance-manager
 docker compose up -d --build
+```
 
 3. Laravel初期設定
-docker compose exec php bash
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
+```
+docker compose exec php composer install
+docker compose exec php cp .env.example .env
+docker compose exec php php artisan key:generate
+docker compose exec php php artisan migrate --seed
+```
+
+## テストアカウント
+### 管理者
+email: admin@coachtech.com  
+password: password123  
+### 一般ユーザ
+name: 西 伶奈  
+email: reina.n@coachtech.com  
+password: password123  
+※ 他にも複数名、一般ユーザーをSeederで登録しています。
+
 
 ## テーブル仕様
 ### usersテーブル
@@ -28,6 +42,7 @@ php artisan migrate --seed
 | role | varchar(20) |  |  | ◯ |  |
 | created_at | timestamp |  |  |  |  |
 | updated_at | timestamp |  |  |  |  |
+| email_verified_at | timestamp |  |  |  |  |
 
 ### attendancesテーブル
 | カラム名 | 型 | primary key | unique key | not null | foreign key |
@@ -37,7 +52,7 @@ php artisan migrate --seed
 | work_date | date |  | user_idとの組み合わせ | ◯ |  |
 | clock_in_at | time |  |  |  |  |
 | clock_out_at | time |  |  |  |  |
-| note | text |  |  | ◯ |  |
+| reason | text |  |  | ◯ |  |
 | status | varchar(20) |  |  | ◯ |  |
 | created_at | timestamp |  |  |  |  |
 | updated_at | timestamp |  |  |  |  |
@@ -71,27 +86,34 @@ php artisan migrate --seed
 | カラム名 | 型 | primary key | unique key | not null | foreign key |
 | --- | --- | --- | --- | --- | --- |
 | id | bigint | ◯ |  | ◯ |  |
-| attendance_request_id | bigint |  |  | break_noの組み合わせ | attendance_requests(id) |
-| break_no | tinyint |  | ◯ | attendance_requestsの組み合わせ |  |
+| attendance_request_id | bigint |  | break_noの組み合わせ | ◯ |  |
+| break_no | tinyint |  | attendance_requestsの組み合わせ | ◯ |  |
 | break_start_at | time |  |  | ◯ |  |
 | break_end_at | time |  |  | ◯ |  |
 | created_at | timestamp |  |  |  |  |
 | updated_at | timestamp |  |  |  |  |
 
 ## ER図
+![ER図](er.png)
 
 ## メール認証
+Laravel Fortify を利用したメール認証機能を実装しています。
+会員登録後、認証メールが送信されます。
+ローカル環境では Mailhog を使用して確認できます。
+
 
 ## テスト（PHPUnit）
+PHPUnit を利用した自動テストを実装しています。
+```
+docker compose exec php php artisan test
+```
+
 
 ## 仕様技術（実行環境）
-
-PHP 8.1.33
-Laravel 8.83.29
-MySQL 8.0.44
-nginx 1.29.3
-Docker 28.3.2 / docker-compose 2.39.1
+PHP
+Laravel
+MySQL
+nginx
+Docker / docker-compose
 Laravel Fortify（認証機能）
 FormRequest（バリデーション）
-
-## 開発環境（動作確認用URL）
