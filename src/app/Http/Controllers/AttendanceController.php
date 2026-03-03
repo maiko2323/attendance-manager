@@ -218,7 +218,7 @@ class AttendanceController extends Controller
             ->exists();
 
         if ($already) {
-            return redirect()->route('attendance.detail', ['date' => $workDate]);
+        return redirect()->route('attendance.detail', ['date' => $workDate]);
         }
 
         DB::transaction(function () use ($attendance, $data) {

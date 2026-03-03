@@ -1,10 +1,7 @@
 <header class="g-header">
     <div class="g-header__inner">
-        {{-- ロゴ --}}
         <a class="g-header__brand" href="{{ url('/admin/attendance/list') }}">
-            <img class="g-header__logo"
-                src="{{ asset('images/logo.svg') }}"
-                alt="COACHTECH">
+            <img class="g-header__logo" src="{{ asset('images/logo.svg') }}" alt="COACHTECH">
         </a>
 
         @php
@@ -13,7 +10,6 @@
 
         @if ($type === 'login')
             <div class="g-header__spacer"></div>
-
         @else
             <nav class="g-header__nav">
                 <a href="{{ route('admin.attendance.list') }}">勤怠一覧</a>

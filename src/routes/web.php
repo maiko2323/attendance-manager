@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
 
-    // ===== メール認証（ログイン済みなら未認証でも見れてOK） =====
     Route::get('/email/verify', function () {
         return view('auth.verify');
     })->name('verification.notice');

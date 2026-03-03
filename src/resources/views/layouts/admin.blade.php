@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ja">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +10,7 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     @stack('styles')
 </head>
+
 <body>
     @php
         $headerType = trim($__env->yieldContent('header_type', 'default'));
@@ -20,4 +22,5 @@
         @yield('content')
     </main>
 </body>
+
 </html>

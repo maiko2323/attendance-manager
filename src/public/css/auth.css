@@ -1,12 +1,9 @@
-
-/* 全体 */
 .auth {
     max-width: 480px;
     margin: 80px auto 0;
     padding: 0 16px;
 }
 
-/* タイトル */
 .auth__title {
     text-align: center;
     font-size: 28px;
@@ -14,14 +11,12 @@
     margin-bottom: 40px;
 }
 
-/* フォーム */
 .auth__form {
     display: flex;
     flex-direction: column;
     gap: 24px;
 }
 
-/* ラベル＋入力 */
 .auth__group {
     display: flex;
     flex-direction: column;
@@ -32,7 +27,6 @@
     font-size: 14px;
 }
 
-/* 入力欄 */
 .auth__group input {
     height: 44px;
     padding: 0 12px;
@@ -41,7 +35,6 @@
     border-radius: 4px;
 }
 
-/* 登録ボタン */
 .auth__button {
     margin-top: 16px;
     height: 48px;
@@ -54,7 +47,6 @@
     cursor: pointer;
 }
 
-/* 下のリンク */
 .auth__link {
     margin-top: 24px;
     text-align: center;

@@ -4,11 +4,11 @@
             <img class="g-header__logo" src="{{ asset('images/logo.svg') }}" alt="COACHTECH">
         </a>
 
-        {{-- ① 会員登録/ログイン：ロゴのみ --}}
+        {{-- 会員登録/ログイン：ロゴのみ --}}
         @if ($type === 'guest')
             <div class="g-header__spacer"></div>
 
-        {{-- ② 退勤後：今月の出勤一覧 / 申請一覧 / ログアウト --}}
+            {{-- 退勤後：今月の出勤一覧 / 申請一覧 / ログアウト --}}
         @elseif ($type === 'after')
             <nav class="g-header__nav">
                 <a href="{{ url('/attendance/list') }}">今月の出勤一覧</a>
@@ -19,7 +19,7 @@
                 </form>
             </nav>
 
-        {{-- ③ その他：勤怠 / 勤怠一覧 / 申請 / ログアウト --}}
+            {{-- その他：勤怠 / 勤怠一覧 / 申請 / ログアウト --}}
         @else
             <nav class="g-header__nav">
                 <a href="{{ url('/attendance') }}">勤怠</a>

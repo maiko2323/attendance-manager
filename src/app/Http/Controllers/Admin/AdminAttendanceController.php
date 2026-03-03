@@ -9,7 +9,6 @@ use App\Models\AttendanceRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -250,7 +249,6 @@ class AdminAttendanceController extends Controller
             ->with('message', '勤怠を更新しました。');
     }
 
-
     public function upsert(AttendanceUpdateRequest $request, User $user, string $date)
     {
         $validated = $request->validated();
@@ -313,52 +311,47 @@ class AdminAttendanceController extends Controller
         return view('admin.attendance.request-approve', compact('req', 'break1', 'break2', 'workDate'));
     }
 
-    public function approve(AttendanceUpdateRequest $request, $id)
-    {
-        $req = AttendanceRequest::with(['attendance', 'requestBreaks'])
-            ->findOrFail($id);
+    public function approve(AttendanceUpdateRequest $request, $attendance_correct_request_id)
+{
+    $validated = $request->validated();
 
-        $data = $request->validated();
+    $req = AttendanceRequest::with(['attendance', 'requestBreaks'])
+        ->findOrFail($attendance_correct_request_id);
 
-        DB::transaction(function () use ($req, $data) {
-            $attendance = $req->attendance;
+    DB::transaction(function () use ($req, $validated) {
+        $attendance = $req->attendance;
 
-            // 出勤・退勤
-            $attendance->clock_in_at  = $data['clock_in_at'];
-            $attendance->clock_out_at = $data['clock_out_at'];
+        $attendance->clock_in_at  = $validated['clock_in_at'] ?? null;
+        $attendance->clock_out_at = $validated['clock_out_at'] ?? null;
 
-            // 休憩
-            foreach ([1, 2] as $no) {
-                $bs = data_get($data['breaks'], "$no.start");
-                $be = data_get($data['breaks'], "$no.end");
+        foreach ([1, 2] as $no) {
+            $bs = data_get($validated, "breaks.$no.start");
+            $be = data_get($validated, "breaks.$no.end");
 
-                if (!$bs && !$be) {
-                    $attendance->breaks()->where('break_no', $no)->delete();
-                    continue;
-                }
-
-                $attendance->breaks()->updateOrCreate(
-                    ['break_no' => $no],
-                    [
-                        'break_start_at' => $bs,
-                        'break_end_at'   => $be,
-                    ]
-                );
+            if (!$bs && !$be) {
+                $attendance->breaks()->where('break_no', $no)->delete();
+                continue;
             }
 
-            // ステータス再計算
-            $attendance->status = $attendance->clock_out_at
-                ? 'after'
-                : ($attendance->clock_in_at ? 'working' : 'before');
-            $attendance->save();
+            $attendance->breaks()->updateOrCreate(
+                ['break_no' => $no],
+                ['break_start_at' => $bs, 'break_end_at' => $be]
+            );
+        }
 
-            $req->status = 'approved';
-            $req->approved_at = now();
-            $req->save();
-        });
+        $attendance->status = $attendance->clock_out_at
+            ? 'after'
+            : ($attendance->clock_in_at ? 'working' : 'before');
 
-        return back();
-    }
+        $attendance->save();
+
+        $req->status = 'approved';
+        $req->approved_at = now();
+        $req->save();
+    });
+
+    return back()->with('message', '勤怠を更新しました');
+}
 
     public function logout(Request $request)
     {

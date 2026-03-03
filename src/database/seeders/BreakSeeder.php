@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Attendance;
 use App\Models\BreakTime;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class BreakSeeder extends Seeder

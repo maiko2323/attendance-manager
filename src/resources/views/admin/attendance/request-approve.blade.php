@@ -9,94 +9,127 @@
 @endpush
 
 @section('content')
-<div class="attdetail">
-<div class="attdetail__wrap">
+    <div class="attdetail">
+        <div class="attdetail__wrap">
 
-    <h1 class="attdetail__title">
-        <img src="{{ asset('images/heading_bar.png') }}" alt="" class="heading-bar">
-        勤怠詳細
-    </h1>
+            <h1 class="attdetail__title">
+                <img src="{{ asset('images/heading_bar.png') }}" alt="" class="heading-bar">
+                勤怠詳細
+            </h1>
 
-    @php
-        $in  = $req->request_clock_in_at;
-        $out = $req->request_clock_out_at;
+            @php
+                $in = $req->request_clock_in_at;
+                $out = $req->request_clock_out_at;
 
-        $fmt = function ($t) {
-            return $t ? \Carbon\Carbon::parse($t)->format('H:i') : '';
-        };
+                $fmt = function ($t) {
+                    return $t ? \Carbon\Carbon::parse($t)->format('H:i') : '';
+                };
 
-        $b1s = $break1?->break_start_at;
-        $b1e = $break1?->break_end_at;
-        $b2s = $break2?->break_start_at;
-        $b2e = $break2?->break_end_at;
-    @endphp
+                $b1s = $break1?->break_start_at;
+                $b1e = $break1?->break_end_at;
+                $b2s = $break2?->break_start_at;
+                $b2e = $break2?->break_end_at;
+            @endphp
 
-    <div class="attdetail__card">
-        <table class="attdetail__table">
-            <tr>
-                <th>名前</th>
-                <td class="attdetail__value">{{ $req->user->name }}</td>
-            </tr>
+            <div class="attdetail__card">
+                <table class="attdetail__table">
+                    <tr>
+                        <th>名前</th>
+                        <td class="attdetail__value">{{ $req->user->name }}</td>
+                    </tr>
 
-            <tr>
-                <th>日付</th>
-                <td colspan="2" class="attdetail__value">
-                    <span class="attdetail__date-item">{{ \Carbon\Carbon::parse($workDate)->isoFormat('YYYY年') }}</span>
-                    <span class="attdetail__date-item">{{ \Carbon\Carbon::parse($workDate)->isoFormat('M月D日') }}</span>
-                </td>
-            </tr>
+                    <tr>
+                        <th>日付</th>
+                        <td colspan="2" class="attdetail__value">
+                            <span
+                                class="attdetail__date-item">{{ \Carbon\Carbon::parse($workDate)->isoFormat('YYYY年') }}</span>
+                            <span
+                                class="attdetail__date-item">{{ \Carbon\Carbon::parse($workDate)->isoFormat('M月D日') }}</span>
+                        </td>
+                    </tr>
 
-            <tr>
-                <th>出勤・退勤</th>
-                <td class="attdetail__time">
-                    <span class="attdetail__time-value">{{ $fmt($in) }}</span>
-                    <span class="attdetail__tilde">〜</span>
-                    <span class="attdetail__time-value">{{ $fmt($out) }}</span>
-                </td>
-            </tr>
+                    <tr>
+                        <th>出勤・退勤</th>
+                        <td class="attdetail__time">
+                            <span class="attdetail__time-value">{{ $fmt($in) }}</span>
+                            <span class="attdetail__tilde">〜</span>
+                            <span class="attdetail__time-value">{{ $fmt($out) }}</span>
+                        </td>
+                    </tr>
 
-            <tr>
-                <th>休憩</th>
-                <td class="attdetail__time">
-                    <span class="attdetail__time-value">{{ $fmt($b1s) }}</span>
-                    <span class="attdetail__tilde">〜</span>
-                    <span class="attdetail__time-value">{{ $fmt($b1e) }}</span>
-                </td>
-            </tr>
+                    <tr>
+                        <th>休憩</th>
+                        <td class="attdetail__time">
+                            <span class="attdetail__time-value">{{ $fmt($b1s) }}</span>
+                            <span class="attdetail__tilde">〜</span>
+                            <span class="attdetail__time-value">{{ $fmt($b1e) }}</span>
+                        </td>
+                    </tr>
 
-            <tr>
-                <th>休憩2</th>
-                <td class="attdetail__time">
-                    <span class="attdetail__time-value">{{ $fmt($b2s) }}</span>
-                    <span class="attdetail__tilde">〜</span>
-                    <span class="attdetail__time-value">{{ $fmt($b2e) }}</span>
-                </td>
-            </tr>
+                    <tr>
+                        <th>休憩2</th>
+                        <td class="attdetail__time">
+                            <span class="attdetail__time-value">{{ $fmt($b2s) }}</span>
+                            <span class="attdetail__tilde">〜</span>
+                            <span class="attdetail__time-value">{{ $fmt($b2e) }}</span>
+                        </td>
+                    </tr>
 
-            <tr>
-                <th>備考</th>
-                <td class="attdetail__memo">
-                    <span class="attdetail__memo-text">{{ $req->reason }}</span>
-                </td>
-            </tr>
-        </table>
+                    <tr>
+                        <th>備考</th>
+                        <td class="attdetail__memo">
+                            <span class="attdetail__memo-text">{{ $req->reason }}</span>
+                        </td>
+                    </tr>
+                </table>
 
-    </div>
+            </div>
 
-    <div class="attdetail__actions">
-        @if($req->status === 'approved')
-            <button type="button" class="attdetail__btn" disabled style="background:#777; cursor:not-allowed;">
-            承認済み
-            </button>
-        @else
-            <form method="POST" action="{{ route('stamp_correction_request.approve', $req->id) }}">
-            @csrf
-            <button type="submit" class="attdetail__btn">承認</button>
-            </form>
-        @endif
-    </div>
+            <div class="attdetail__actions">
+                @if ($req->status === 'approved')
+                    <button type="button" class="attdetail__btn" disabled style="background:#777; cursor:not-allowed;">
+                        承認済み
+                    </button>
+                @else
+                    <form method="POST"
+                        action="{{ route('stamp_correction_request.approve', ['attendance_correct_request_id' => $req->id]) }}">
+                        @csrf
 
-</div>
+                        @php
+                            $fmt = function ($t) {
+                                if (blank($t)) {
+                                    return '';
+                                }
+                                try {
+                                    return \Carbon\Carbon::parse($t)->format('H:i');
+                                } catch (\Exception $e) {
+                                    return (string) $t; // 念のため
+                                }
+                            };
 
-</div>
-@endsection
+                            $b1 = $req->requestBreaks->firstWhere('break_no', 1);
+                            $b2 = $req->requestBreaks->firstWhere('break_no', 2);
+                        @endphp
+
+                        <input type="hidden" name="clock_in_at" value="{{ $fmt($req->request_clock_in_at) }}">
+                        <input type="hidden" name="clock_out_at" value="{{ $fmt($req->request_clock_out_at) }}">
+
+                        <input type="hidden" name="reason" value="{{ $req->reason }}">
+
+                        <input type="hidden" name="breaks[1][start]" value="{{ $fmt($b1?->break_start_at) }}">
+                        <input type="hidden" name="breaks[1][end]" value="{{ $fmt($b1?->break_end_at) }}">
+
+                        <input type="hidden" name="breaks[2][start]" value="{{ $fmt($b2?->break_start_at) }}">
+                        <input type="hidden" name="breaks[2][end]" value="{{ $fmt($b2?->break_end_at) }}">
+
+                        <button type="submit" class="attdetail__btn">承認</button>
+                    </form>
+                @endif
+            </div>
+
+            @if (session('message'))
+                <p class="attdetail__notice">{{ session('message') }}</p>
+            @endif
+
+        </div>
+    @endsection

@@ -1,7 +1,6 @@
 
 .att {
     min-height: calc(100vh - 56px);
-    /* ヘッダー高さ分を引く */
     display: grid;
     place-items: center;
     padding: 32px 16px;
@@ -9,14 +8,12 @@
     padding-top: 140px;
 }
 
-/* 中央ブロック */
 .att__inner {
     width: 100%;
     max-width: 520px;
     text-align: center;
 }
 
-/* 状態バッジ */
 .att__badge {
     display: inline-flex;
     align-items: center;
@@ -34,7 +31,6 @@
     letter-spacing: 0.15em;
 }
 
-/* 日付 */
 .att__date {
     font-weight: 400;
     font-size: 40px;
@@ -48,7 +44,6 @@
     justify-content: center;
 }
 
-/* 時刻（太く大きく） */
 .att__time {
     font-weight: 700;
     font-size: 80px;
@@ -61,7 +56,6 @@
     justify-content: center
 }
 
-/* ボタンエリア */
 .att__actions {
     display: flex;
     justify-content: center;
@@ -69,18 +63,15 @@
     margin-top: 10px;
 }
 
-/* 出勤後みたいに2ボタン並べる時 */
 .att__actions--row {
     grid-auto-flow: column;
     grid-auto-columns: 140px;
 }
 
-/* ボタン共通 */
 .btn {
     padding: 0;
 }
 
-/* 黒ボタン（出勤/退勤） */
 .btn-black {
     width: 221px;
     height: 77px;
@@ -98,7 +89,6 @@
     cursor: pointer;
 }
 
-/* 白ボタン（休憩） */
 .btn-white {
     width: 221px;
     height: 77px;
@@ -117,7 +107,6 @@
     cursor: pointer;
 }
 
-/* 退勤後メッセージ */
 .att__message {
     margin-top: 6px;
     font-size: 26px;

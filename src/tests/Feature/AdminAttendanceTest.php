@@ -202,24 +202,33 @@ class AdminAttendanceTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->post(
+        $payload = [
+        'clock_in_at'  => '18:00', // ★ 出勤が退勤より後
+        'clock_out_at' => '17:00',
+        'breaks' => [
+            1 => ['start' => null, 'end' => null],
+            2 => ['start' => null, 'end' => null],
+        ],
+        'reason' => 'reason text', // ★ required
+    ];
+
+    // ★ from() 追加：戻り先（referer）を固定して errors をセッションに載せる
+    // ここは「実際に存在するURL」なら何でもOK（詳細URLが違うなら合わせて）
+    $response = $this
+        ->from('/admin/attendance/' . $attendance->id)
+        ->post(
             route('stamp_correction_request.approve', ['attendance_correct_request_id' => $req->id]),
-            [
-                'clock_in_at' => '18:00',
-                'clock_out_at' => '09:00',
-                'breaks' => [
-                    1 => ['start' => '', 'end' => ''],
-                ],
-                'reason' => 'reason text',
-            ]
+            $payload
         );
 
-        $response->assertSessionHasErrors([
-            'clock_in_at' => '出勤時間が不適切な値です',
-        ]);
+    $response->assertStatus(302);
 
-        Carbon::setTestNow();
-    }
+    $response->assertSessionHasErrors([
+        'clock_in_at' => '出勤時間が不適切な値です',
+    ]);
+
+    Carbon::setTestNow();
+}
 
     // 休憩開始時間が退勤時間より後になっている場合、エラーメッセージ
     public function test_request_update_fails_when_break_start_is_after_clock_out_for_admin()
@@ -248,17 +257,22 @@ class AdminAttendanceTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $response = $this->post(
-            route('stamp_correction_request.approve', ['attendance_correct_request_id' => $req->id]),
-            [
-                'clock_in_at' => '09:00',
-                'clock_out_at' => '17:00',
-                'breaks' => [
-                    1 => ['start' => '18:00', 'end' => '18:10'],
-                ],
-                'reason' => 'reason text',
-            ]
-        );
+        $response = $this
+            ->from('/admin/attendance/' . $attendance->id)
+            ->post(
+                route('stamp_correction_request.approve', ['attendance_correct_request_id' => $req->id]),
+                [
+                    'clock_in_at' => '09:00',
+                    'clock_out_at' => '17:00',
+                    'breaks' => [
+                        1 => ['start' => '18:00', 'end' => '18:10'],
+                        2 => ['start' => null, 'end' => null],
+                    ],
+                    'reason' => 'reason text',
+                ]
+            );
+
+        $response->assertStatus(302);
 
         $response->assertSessionHasErrors([
             'breaks.1.start' => '休憩時間が不適切な値です',
